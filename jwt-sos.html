@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Biotiful - Générateur JWT</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+</head>
+<body class="bg-white text-gray-800 font-sans">
+
+  <!-- Header -->
+  <header class="bg-green-100 p-6 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-green-800">Biotiful - Générateur JWT</h1>
+    </div>
+  </header>
+
+  <!-- JWT Form -->
+  <section class="py-16 px-4 max-w-3xl mx-auto">
+    <h2 class="text-3xl font-bold mb-6 text-center">Créer un JWT avec les champs choisis</h2>
+
+    <form id="jwtCheckboxForm" class="space-y-6 bg-green-50 p-6 rounded shadow">
+
+      <!-- User field -->
+      <div class="flex items-center space-x-4">
+        <input type="checkbox" id="includeUser" class="h-4 w-4 text-green-600 border-gray-300">
+        <label for="includeUser" class="font-medium">Ajouter le champ "user"</label>
+        <input type="text" id="userValue" class="flex-1 p-2 border rounded" placeholder="Nom d'utilisateur">
+      </div>
+
+      <!-- Admin field -->
+      <div class="flex items-center space-x-4">
+        <input type="checkbox" id="includeAdmin" class="h-4 w-4 text-green-600 border-gray-300">
+        <label for="includeAdmin" class="font-medium">Ajouter "admin" (booléen)</label>
+        <select id="adminValue" class="p-2 border rounded">
+          <option value="true">true</option>
+          <option value="false">false</option>
+        </select>
+      </div>
+
+      <!-- Expiration -->
+      <div class="flex items-center space-x-4">
+        <input type="checkbox" id="includeExp" class="h-4 w-4 text-green-600 border-gray-300">
+        <label for="includeExp" class="font-medium">Ajouter l'expiration (exp)</label>
+        <input type="number" id="expSeconds" class="p-2 border rounded" placeholder="Par ex. 3600 pour 1 heure">
+      </div>
+
+      <!-- Issued at -->
+      <div class="flex items-center space-x-4">
+        <input type="checkbox" id="includeIat" class="h-4 w-4 text-green-600 border-gray-300">
+        <label for="includeIat" class="font-medium">Ajouter la date d'émission (iat)</label>
+      </div>
+
+      <!-- Secret -->
+      <div>
+        <label class="block mb-2 font-medium">Clé secrète (obligatoire)</label>
+        <input type="text" id="secretKey" required
+               class="w-full p-3 border rounded"
+               placeholder="Entrez votre clé secrète"/>
+      </div>
+
+      <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700 transition">
+        Générer le JWT
+      </button>
+    </form>
+
+    <div class="mt-10">
+      <h3 class="text-xl font-semibold mb-2">JWT généré :</h3>
+      <pre id="outputBox" class="bg-gray-100 p-4 rounded overflow-x-auto text-sm text-gray-700">...</pre>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-green-100 text-center p-4">
+    <p>© 2025 Biotiful. Tous droits réservés.</p>
+  </footer>
+
+  <!-- Script -->
+  <script>
+    document.getElementById("jwtCheckboxForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const payload = {};
+      if (document.getElementById("includeUser").checked) {
+        payload.user = document.getElementById("userValue").value || "guest";
+      }
+      if (document.getElementById("includeAdmin").checked) {
+        payload.admin = document.getElementById("adminValue").value === "true";
+      }
+      if (document.getElementById("includeExp").checked) {
+        const seconds = parseInt(document.getElementById("expSeconds").value || "0");
+        payload.exp = Math.floor(Date.now() / 1000) + seconds;
+      }
+      if (document.getElementById("includeIat").checked) {
+        payload.iat = Math.floor(Date.now() / 1000);
+      }
+
+      const secret = document.getElementById("secretKey").value.trim();
+      if (!secret) {
+        alert("Veuillez saisir une clé secrète.");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://185.110.191.60:3132/api/jwt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            header: { alg: "HS256", typ: "JWT" },
+            payload,
+            secret
+          })
+        });
+
+        const data = await response.text();
+        document.getElementById("outputBox").textContent = data;
+      } catch (err) {
+        document.getElementById("outputBox").textContent = "Erreur :\n" + err.message;
+      }
+    });
+  </script>
+
+</body>
+</html>
